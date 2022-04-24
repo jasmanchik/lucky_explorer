@@ -1,7 +1,6 @@
 version: '3'
 services:
 
-    #PHP Service
     app:
         build:
             context: .
@@ -16,10 +15,12 @@ services:
         volumes:
             - ./:/var/www
             - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+        depends_on:
+            - db
+            - redis
         networks:
             - app-network
 
-    #Nginx Service
     webserver:
         image: nginx:alpine
         container_name: webserver
@@ -34,7 +35,6 @@ services:
         networks:
             - app-network
 
-    #MySQL Service
     db:
         image: mysql:8.0.25
         container_name: db
@@ -55,12 +55,24 @@ services:
         networks:
             - app-network
 
-#Docker Networks
+    redis:
+        image: redis:6.2.2-alpine
+        restart: always
+        container_name: app_redis
+        command: redis-server
+        volumes:
+            - redis-data:/data
+        ports:
+            - "6379:6379"
+        networks:
+            - app-network
+
 networks:
     app-network:
         driver: bridge
 
-#Volumes
 volumes:
     db-data:
+        driver: local
+    redis-data:
         driver: local
