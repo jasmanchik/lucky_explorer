@@ -1,49 +1,36 @@
-#run container
-init: docker-down-clear docker-pull docker-build-pull docker-up
-
-#install framework, if a project is a new one
-framework:laravel-install
-
-#install composer packages
-composer:composer-install composer-install-packages
-
-#shut down container
-down: docker-down-clear
-
-#migrations
-migrate: laravel-migrate
-migrate-fresh: laravel-migrate-fresh
-migrate-fresh-seed: laravel-migrate-fresh-seed
-
 current_dir := $(abspath $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST))))))
-
-docker-up:
+#run container
+init:
+	docker-compose down --remove-orphans
+	docker-compose pull
+	docker-compose build --pull
 	docker-compose up -d
 
-docker-down-clear:
-	docker-compose down --remove-orphans
- #-v
-
-docker-pull:
-	docker-compose pull
-
-docker-build-pull:
-	docker-compose build --pull
-
-laravel-install:
+#install framework, if a project is a new one
+framework:
 	docker-compose exec app composer create-project laravel/laravel application
 
-composer-install:
-	docker run --rm -v $(current_dir)/application:/app composer install
+#install composer packages
+ci:
+	docker run --rm --volume $(current_dir)/app:/app composer install
+cu:
+	docker run --rm --volume $(current_dir)/app:/app composer update
 
-composer-install-packages:
-	docker-compose exec app sh -c "cd application && composer require barryvdh/laravel-debugbar --dev"
+#shut down container
+down:
+	docker-compose down --remove-orphans
+#-v
 
-laravel-migrate:
-	docker-compose exec app sh -c "cd application && php artisan migrate"
+mix:
+	docker-compose exec app sh -c "npx mix"
 
-laravel-migrate-fresh:
-	docker-compose exec app sh -c "cd application &&php artisan migrate:fresh"
+mixw:
+	docker-compose exec app sh -c "npx mix watch"
 
-laravel-migrate-fresh-seed:
-	docker-compose exec app sh -c "cd application && php artisan migrate:fresh --seed"
+#migrations
+migrate:
+	docker-compose exec app sh -c "php artisan migrate"
+migrate-fresh:
+	docker-compose exec app sh -c "php artisan migrate:fresh"
+migrate-fresh-seed:
+	docker-compose exec app sh -c "php artisan migrate:fresh --seed"
